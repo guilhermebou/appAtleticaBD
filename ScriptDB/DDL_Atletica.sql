@@ -47,7 +47,7 @@ CREATE TABLE Atleta (
 CREATE TABLE Funcionario (
     aluno_id INTEGER PRIMARY KEY,
     cargo VARCHAR(100) NOT NULL,
-    departamento VARCHAR(100) NOT NULL,
+    departamento INTEGER NOT NULL,
     FOREIGN KEY (aluno_id) REFERENCES Aluno(usuario_id) ON DELETE CASCADE
 );
 
