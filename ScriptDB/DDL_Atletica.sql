@@ -10,10 +10,11 @@ CREATE TABLE Usuario (
 -- Tabela: Visitante
 CREATE TABLE Visitante (
     usuario_id INTEGER PRIMARY KEY,
-	eh_estudante BOOLEAN,
-	cidade_origem VARCHAR(100),
+    eh_estudante BOOLEAN,
+    cidade_origem VARCHAR(100),
     FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
 );
+-- A restrição de integridade referencial acima garante que quando um usuário é excluído da tabela 'Usuario', todos os registros vinculados na tabela 'Visitante' serão automaticamente excluídos, mantendo assim a consistência dos dados.
 
 -- Tabela: Aluno
 CREATE TABLE Aluno (
@@ -21,9 +22,10 @@ CREATE TABLE Aluno (
     curso VARCHAR(100) NOT NULL,
     matricula VARCHAR(20) NOT NULL,
     comprovante_vinculo BYTEA,
-	data_ingresso DATE,
+    data_ingresso DATE,
     FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
 );
+-- Da mesma forma, a restrição acima garante que quando um usuário é excluído da tabela 'Usuario', também seja excluído da tabela 'Aluno'.
 
 -- Tabela: Equipe
 CREATE TABLE Equipe (
@@ -42,6 +44,8 @@ CREATE TABLE Atleta (
     FOREIGN KEY (aluno_id) REFERENCES Aluno(usuario_id) ON DELETE CASCADE,
 	FOREIGN KEY (equipe_id) REFERENCES Equipe(id) ON DELETE CASCADE
 );
+-- Aqui garante que, se um aluno for excluído da tabela 'Aluno', todos os registros correspondentes na tabela 'Atleta' serão automaticamente excluídos.
+-- Garante também que se uma equipe for excluída da tabela 'Equipe', todos os registros correspondentes na tabela 'Atleta' serão automaticamente.
 
 -- Tabela: Funcionario
 CREATE TABLE Funcionario (
@@ -50,6 +54,7 @@ CREATE TABLE Funcionario (
     departamento INTEGER NOT NULL,
     FOREIGN KEY (aluno_id) REFERENCES Aluno(usuario_id) ON DELETE CASCADE
 );
+-- Da mesma forma das anteriores, a chave estrangeira garante que se um aluno for excluído da tabela 'Aluno', todos os registros correspondentes na tabela 'Funcionario' serão automaticamente excluídos.
 
 -- Tabela: DepartamentoMarketing
 CREATE TABLE DepartamentoMarketing (
@@ -64,6 +69,7 @@ CREATE TABLE Evento (
     departamento_marketing_id INTEGER NOT NULL,
     FOREIGN KEY (departamento_marketing_id) REFERENCES DepartamentoMarketing(id) ON DELETE CASCADE
 );
+-- Nesta tabela o mesmo se aplica, se um departamento de marketing for excluído da tabela 'DepartamentoMarketing', todos os registros relacionados na tabela 'Evento' serão automaticamente excluídos.
 
 -- Tabela: ParticipacaoEvento
 CREATE TABLE ParticipacaoEvento (
@@ -73,6 +79,7 @@ CREATE TABLE ParticipacaoEvento (
     FOREIGN KEY (equipe_id) REFERENCES Equipe(id) ON DELETE CASCADE,
     FOREIGN KEY (evento_id) REFERENCES Evento(id) ON DELETE CASCADE
 );
+-- Aqui o mesmo se repete para as tabelas EQUIPE e EVENTO.
 
 -- Tabela: Local
 CREATE TABLE Local (
@@ -101,6 +108,7 @@ CREATE TABLE UsoPatrimonio (
     FOREIGN KEY (patrimonio_id) REFERENCES Patrimonio(id) ON DELETE CASCADE,
     FOREIGN KEY (atleta_id) REFERENCES Atleta(aluno_id) ON DELETE CASCADE
 );
+-- Aqui, o mesmo se repete para Evento, Patrimonio e Atleta.
 
 -- Tabela: Produto
 CREATE TABLE Produto (
@@ -124,16 +132,17 @@ CREATE TABLE Fornecedor (
 
 -- Tabela: VendaProduto
 CREATE TABLE VendaProduto (
+	id SERIAL PRIMARY KEY,
     produto_id INTEGER NOT NULL,
     usuario_id INTEGER NOT NULL,
     quantidade INTEGER NOT NULL,
     valor_total DECIMAL(10, 2) NOT NULL,
     data_venda DATE NOT NULL,
 	comprovante_venda BYTEA,
-    PRIMARY KEY (produto_id, usuario_id, data_venda),
     FOREIGN KEY (produto_id) REFERENCES Produto(id) ON DELETE CASCADE,
     FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
 );
+-- Neste caso, o mesmo se repete para Produto e Usuario.
 
 -- Tabela: CompraFornecedor
 CREATE TABLE CompraFornecedor (
@@ -146,3 +155,4 @@ CREATE TABLE CompraFornecedor (
     FOREIGN KEY (fornecedor_id) REFERENCES Fornecedor(id) ON DELETE CASCADE,
     FOREIGN KEY (produto_id) REFERENCES Produto(id) ON DELETE CASCADE
 );
+-- Por último, o mesmo se repete para Fornecedor e Produto.
