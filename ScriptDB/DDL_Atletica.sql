@@ -37,6 +37,8 @@ CREATE TABLE Equipe (
 CREATE TABLE Atleta (
     aluno_id INTEGER PRIMARY KEY,
     equipe_id INTEGER NOT NULL,
+	peso DECIMAL(5,2),
+    altura DECIMAL(5,2),
     FOREIGN KEY (aluno_id) REFERENCES Aluno(usuario_id) ON DELETE CASCADE,
 	FOREIGN KEY (equipe_id) REFERENCES Equipe(id) ON DELETE CASCADE
 );
