@@ -7,6 +7,14 @@ CREATE TABLE Usuario (
     foto_perfil BYTEA
 );
 
+-- Tabela: Visitante
+CREATE TABLE Visitante (
+    usuario_id INTEGER PRIMARY KEY,
+	eh_estudante BOOLEAN,
+	cidade_origem VARCHAR(100),
+    FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
+);
+
 -- Tabela: Aluno
 CREATE TABLE Aluno (
     usuario_id INTEGER PRIMARY KEY,
@@ -39,12 +47,6 @@ CREATE TABLE Funcionario (
     cargo VARCHAR(100) NOT NULL,
     departamento VARCHAR(100) NOT NULL,
     FOREIGN KEY (aluno_id) REFERENCES Aluno(usuario_id) ON DELETE CASCADE
-);
-
--- Tabela: Visitante
-CREATE TABLE Visitante (
-    usuario_id INTEGER PRIMARY KEY,
-    FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
 );
 
 -- Tabela: DepartamentoMarketing
@@ -125,6 +127,7 @@ CREATE TABLE VendaProduto (
     quantidade INTEGER NOT NULL,
     valor_total DECIMAL(10, 2) NOT NULL,
     data_venda DATE NOT NULL,
+	comprovante_venda BYTEA,
     PRIMARY KEY (produto_id, usuario_id, data_venda),
     FOREIGN KEY (produto_id) REFERENCES Produto(id) ON DELETE CASCADE,
     FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
