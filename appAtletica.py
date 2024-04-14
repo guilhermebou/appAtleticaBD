@@ -6,7 +6,7 @@ from PIL import Image
 import datetime
 import tempfile
 import os
-import numpy as np
+from PyPDF2 import PdfReader
 
 def select_imagem():
     layout_select_img = [
@@ -26,7 +26,7 @@ def select_imagem():
                 imagem_data = retrieve_image_from_db(id)
 
                 if imagem_data:
-                    # Salvar a imagem em um arquivo temporário
+
                     temp_image_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
                     with open(temp_image_path, 'wb') as temp_image:
                         temp_image.write(imagem_data)
@@ -190,23 +190,23 @@ def resize_image(image_path, target_size=(100, 100)):
     img.save(image_path)
 
 def select_user():
-    # Define o layout da tela de busca de usuários
+
     layout_user = [
         [sg.Text('ID do Usuario:'), sg.InputText(key='id_user'), sg.Button('Buscar', bind_return_key=True), sg.Button('Cancelar')],
-        [sg.Column(layout=[  # Coluna para os detalhes do usuário
+        [sg.Column(layout=[
             [sg.Text('Nome:', size=(17, 1)), sg.Text(size=(20, 1), key='-Nome-')],
             [sg.Text('Data de Nascimento:', size=(17, 1)), sg.Text(size=(20, 1), key='-DataNascimento-')],
             [sg.Text('Sexo:', size=(17, 1)), sg.Text(size=(20, 1), key='-Sexo-')]
-        ]), sg.Column(layout=[  # Coluna para a foto do perfil
-            [sg.Image(key='-FotoPerfil-', size=(100, 100), pad=(0, 0))]  # Tamanho da imagem ajustado para 100x100 pixels
+        ]), sg.Column(layout=[
+            [sg.Image(key='-FotoPerfil-', size=(100, 100), pad=(0, 0))]
         ])]
     ]
 
-    # Define o tema e as configurações da janela
+
     sg.theme('LightGrey1')
     sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
 
-    # Cria a janela de busca de usuários
+
     window_select_user = sg.Window('Buscar Usuário', layout=layout_user)
 
     while True:
@@ -218,16 +218,16 @@ def select_user():
             user_id = values['id_user']
             try:
                 cursor.execute("SELECT * FROM Usuario WHERE id = %s", (user_id,))
-                usuario = cursor.fetchone()  # Utilize fetchone() para buscar apenas um usuário
+                usuario = cursor.fetchone()
                 if usuario:
                     window_select_user['-Nome-'].update(usuario[1])
                     window_select_user['-DataNascimento-'].update(str(usuario[2]))
                     window_select_user['-Sexo-'].update(usuario[3])
 
-                    # Carregar a foto do perfil
-                    foto_perfil = usuario[4]  # Suponha que usuario[4] contenha os dados da foto em formato bytea
+
+                    foto_perfil = usuario[4]
                     if foto_perfil:
-                        # Salvar a imagem em um arquivo temporário
+
                         try:
                             with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_image:
                                 temp_image_path = temp_image.name
@@ -236,14 +236,14 @@ def select_user():
                             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_image:
                                 temp_image_path = temp_image.name
                                 temp_image.write(foto_perfil)
-                        # Redimensionar a imagem
+
                         resize_image(temp_image_path)
 
-                        # Verificar se o arquivo de imagem existe e é acessível
+
                         if os.path.exists(temp_image_path):
                             window_select_user['-FotoPerfil-'].update(filename=temp_image_path)
                         else:
-                            window_select_user['-FotoPerfil-'].update(filename='')  # Limpar a imagem se o arquivo não for acessível
+                            window_select_user['-FotoPerfil-'].update(filename='')
                     else:
                         window_select_user['-FotoPerfil-'].update(filename='')
 
@@ -314,21 +314,21 @@ def create_user():
     window_create_user.close()
 
 def menu_user():
-    # Define o layout do menu com os botões organizados
+
     layout_crud_user = [
         [sg.Button('Select', size=(10, 2), button_color=('white', '#3498db'), border_width=3),
          sg.Button('Insert', size=(10, 2), button_color=('white', '#2ecc71'), border_width=3)],
         [sg.Button('Update', size=(10, 2), button_color=('white', '#f39c12'), border_width=3),
          sg.Button('Delete', size=(10, 2), button_color=('white', '#e74c3c'), border_width=3)],
-        [sg.Button('Listar Todos', size=(20, 2), button_color=('white', '#9b59b6'), border_width=3)],  # Botão para listar todos os usuários
+        [sg.Button('Listar Todos', size=(20, 2), button_color=('white', '#9b59b6'), border_width=3)],
         [sg.Button('Sair', size=(10, 2), button_color=('white', '#95a5a6'), border_width=3)]
     ]
 
-    # Define o tema e as configurações da janela
+
     sg.theme('LightGrey1')
     sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
 
-    # Cria a janela do menu
+
     window_menu = sg.Window('CRUD Usuario', layout=layout_crud_user, size=(400, 300), finalize=True)
 
     while True:
@@ -345,7 +345,7 @@ def menu_user():
         elif event == 'Delete':
             delete_user()
         elif event == 'Listar Todos':
-            list_all_users()  # Chamada da função para listar todos os usuários
+            list_all_users()
 
     window_menu.close()
 
@@ -363,6 +363,26 @@ def list_all_users():
     except psycopg2.Error as e:
         connect.rollback()
         sg.popup(e)
+
+def view_pdf_from_bytes(pdf_bytes):
+    try:
+
+        temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        temp_pdf.write(pdf_bytes)
+        temp_pdf.close()
+
+
+        with open(temp_pdf.name, 'rb') as file:
+            reader = PdfReader(file)
+            text = ''
+            for page in reader.pages:
+                text += page.extract_text()
+            sg.popup_scrolled(text)
+
+
+        os.unlink(temp_pdf.name)
+    except Exception as e:
+        sg.popup(f"Erro ao abrir o PDF: {e}")
 
 def select_vendas():
     layout_vendas = [
@@ -390,17 +410,38 @@ def select_vendas():
 
                 vendas = cursor.fetchall()
                 if vendas:
-                    result_str = ''
                     for venda in vendas:
-                        result_str += f'Usuário: {venda[0]}, Produto: {venda[1]}, Quantidade: {venda[2]}, Valor Total: {venda[3]}, Data: {venda[4]}, Comprovante: {venda[5]}\n'
-                    sg.popup(result_str)
+                        layout_venda = [
+                            [sg.Text(f'Usuário: {venda[0]}')],
+                            [sg.Text(f'Produto: {venda[1]}')],
+                            [sg.Text(f'Quantidade: {venda[2]}')],
+                            [sg.Text(f'Valor Total: {venda[3]}')],
+                            [sg.Text(f'Data: {venda[4]}')],
+                            [sg.Button('Visualizar Comprovante', key=venda[5])]
+                        ]
+                        window_venda = sg.Window('Detalhes da Venda').Layout(layout_venda)
+
+                        while True:
+                            event, values = window_venda.read()
+                            if event in (None, 'Cancelar'):
+                                break
+                            elif event == venda[5]:
+
+                                try:
+                                    comprovante = venda[5].tobytes()
+                                    sg.popup_scrolled(comprovante.decode('utf-8'))
+                                except Exception as e:
+                                    comprovante_bytes = venda[5]
+                                    view_pdf_from_bytes(comprovante_bytes)
+
+                        window_venda.close()
                 else:
                     sg.popup('Nenhuma venda encontrada para os IDs fornecidos.')
             except psycopg2.Error as e:
                 connect.rollback()
                 sg.popup(e)
 
-    window_select_vendas()
+    window_select_vendas.close()
 
 def insert_vendas():
     layout_insert = [
