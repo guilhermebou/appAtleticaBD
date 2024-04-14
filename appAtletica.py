@@ -64,8 +64,6 @@ def retrieve_image_from_db(image_id):
         print("Erro ao recuperar imagem:", e)
         return None
 
-#connect.commit()
-
 def insert_user():
     layout_insert = [
         [sg.Text('Nome:'), sg.InputText(key='nome')],
@@ -351,7 +349,6 @@ def menu_user():
 
     window_menu.close()
 
-# Função para listar todos os usuários
 def list_all_users():
     try:
         cursor.execute("SELECT id, nome, dt_nascimento, sexo FROM Usuario")
@@ -452,7 +449,7 @@ def update_vendas():
         [sg.Text('Quantidade:'),sg.InputText(key='quant'),sg.Text('Valor:'),sg.InputText(key='valor'),sg.Text('Data:'),sg.InputText(key='date')],
         [sg.Text('Insira o Comprovante da venda:')],
         [sg.InputText(key='FILE'), sg.FileBrowse()],
-        [sg.Button('Inserir'),sg.Button('Cancelar')]
+        [sg.Button('Atualizar'),sg.Button('Cancelar')]
     ]
     window_update = sg.Window('Atualizar Dados').Layout(layout_update)
 
@@ -485,7 +482,7 @@ def update_vendas():
                 imagem_path = values['FILE']
                 with open(imagem_path, 'rb') as f:
                     imagem_bytes = f.read()
-                update_query_parts.append("imagem = %s")
+                update_query_parts.append("comprovante_venda = %s")
                 update_values.append(psycopg2.Binary(imagem_bytes))
             try:
                 set_clause = ", ".join(update_query_parts)
