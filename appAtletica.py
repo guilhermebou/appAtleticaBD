@@ -168,7 +168,7 @@ def update_user():
                 imagem_path = values['FILE']
                 with open(imagem_path, 'rb') as f:
                     imagem_bytes = f.read()
-                update_query_parts.append("imagem = %s")
+                update_query_parts.append("foto_perfil = %s")
                 update_values.append(psycopg2.Binary(imagem_bytes))
 
             try:
@@ -203,7 +203,7 @@ def select_user():
             [sg.Image(key='-FotoPerfil-', size=(100, 100), pad=(0, 0))]  # Tamanho da imagem ajustado para 100x100 pixels
         ])]
     ]
-    
+
     # Define o tema e as configurações da janela
     sg.theme('LightGrey1')
     sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
@@ -225,7 +225,7 @@ def select_user():
                     window_select_user['-Nome-'].update(usuario[1])
                     window_select_user['-DataNascimento-'].update(str(usuario[2]))
                     window_select_user['-Sexo-'].update(usuario[3])
-                    
+
                     # Carregar a foto do perfil
                     foto_perfil = usuario[4]  # Suponha que usuario[4] contenha os dados da foto em formato bytea
                     if foto_perfil:
@@ -240,7 +240,7 @@ def select_user():
                                 temp_image.write(foto_perfil)
                         # Redimensionar a imagem
                         resize_image(temp_image_path)
-                        
+
                         # Verificar se o arquivo de imagem existe e é acessível
                         if os.path.exists(temp_image_path):
                             window_select_user['-FotoPerfil-'].update(filename=temp_image_path)
