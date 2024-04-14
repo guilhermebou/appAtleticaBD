@@ -136,8 +136,8 @@ CREATE TABLE VendaProduto (
     produto_id INTEGER NOT NULL,
     usuario_id INTEGER NOT NULL,
     quantidade INTEGER NOT NULL,
-    valor_total DECIMAL(10, 2) NOT NULL,
-    data_venda DATE NOT NULL,
+    valor_total DECIMAL(10, 2),
+    data_venda DATE,
 	comprovante_venda BYTEA,
     FOREIGN KEY (produto_id) REFERENCES Produto(id) ON DELETE CASCADE,
     FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
