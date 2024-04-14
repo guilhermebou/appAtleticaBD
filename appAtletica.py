@@ -4,6 +4,9 @@ import PySimpleGUI as sg
 from io import BytesIO
 from PIL import Image
 import datetime
+import tempfile
+import os
+import numpy as np
 
 def select_imagem():
     layout_select_img = [
@@ -11,7 +14,7 @@ def select_imagem():
         [sg.Button('SELECT'), sg.Button('Cancelar')]
     ]
 
-    window_img = sg.Window('Consulta IMG ', layout_select_img)
+    window_img = sg.Window('Consulta IMG ', layout=layout_select_img)
 
     while True:
         event, values = window_img.read()
@@ -20,18 +23,18 @@ def select_imagem():
         if event == 'SELECT':
             id = values['id']
             try:
-
                 imagem_data = retrieve_image_from_db(id)
 
-
                 if imagem_data:
-                    imagem_pil = Image.open(BytesIO(imagem_data))
+                    # Salvar a imagem em um arquivo temporário
+                    temp_image_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
+                    with open(temp_image_path, 'wb') as temp_image:
+                        temp_image.write(imagem_data)
 
                     layout = [
-                        [sg.Image(data=imagem_pil.tobytes())],
+                        [sg.Image(filename=temp_image_path)],
                         [sg.Button('Fechar')]
                     ]
-
 
                     window = sg.Window('Imagem do Banco de Dados', layout)
 
@@ -91,7 +94,6 @@ def insert_user():
             else:
                 with open(imagem_path, 'rb') as f:
                     imagem_bytes = psycopg2.Binary(f.read())
-
 
             if values['M']:
                 sexo = 'M'
@@ -184,35 +186,78 @@ def update_user():
 
     window_update.close()
 
+def resize_image(image_path, target_size=(100, 100)):
+    img = Image.open(image_path)
+    img.thumbnail(target_size)
+    img.save(image_path)
+
 def select_user():
+    # Define o layout da tela de busca de usuários
     layout_user = [
-        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user')],
-        [sg.Button('Buscar'), sg.Button('Cancelar')]
+        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user'), sg.Button('Buscar', bind_return_key=True), sg.Button('Cancelar')],
+        [sg.Column(layout=[  # Coluna para os detalhes do usuário
+            [sg.Text('Nome:', size=(17, 1)), sg.Text(size=(20, 1), key='-Nome-')],
+            [sg.Text('Data de Nascimento:', size=(17, 1)), sg.Text(size=(20, 1), key='-DataNascimento-')],
+            [sg.Text('Sexo:', size=(17, 1)), sg.Text(size=(20, 1), key='-Sexo-')]
+        ]), sg.Column(layout=[  # Coluna para a foto do perfil
+            [sg.Image(key='-FotoPerfil-', size=(100, 100), pad=(0, 0))]  # Tamanho da imagem ajustado para 100x100 pixels
+        ])]
     ]
-    window_select_user = sg.Window('Buscar vendas').Layout(layout_user)
+    
+    # Define o tema e as configurações da janela
+    sg.theme('LightGrey1')
+    sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
+
+    # Cria a janela de busca de usuários
+    window_select_user = sg.Window('Buscar Usuário', layout=layout_user)
 
     while True:
         event, values = window_select_user.read()
-        if event in (None, 'Cancelar'):
+
+        if event in (sg.WINDOW_CLOSED, 'Cancelar'):
             break
-        if event == 'Buscar':
+        elif event == 'Buscar':
             user_id = values['id_user']
             try:
-                cursor.execute("SELECT * FROM Usuario WHERE id = %s",(user_id))
-                usuario = cursor.fetchall()
+                cursor.execute("SELECT * FROM Usuario WHERE id = %s", (user_id,))
+                usuario = cursor.fetchone()  # Utilize fetchone() para buscar apenas um usuário
                 if usuario:
-                    result_str = ''
-                    for colum in usuario:
-                        result_str += f'ID: {colum[0]}, Nome: {colum[1]}, Data Nascimento: {colum[2]}, Sexo: {colum[3]}, Foto_Perfil: {colum[4]}\n'
-                    sg.popup(result_str)
+                    window_select_user['-Nome-'].update(usuario[1])
+                    window_select_user['-DataNascimento-'].update(str(usuario[2]))
+                    window_select_user['-Sexo-'].update(usuario[3])
+                    
+                    # Carregar a foto do perfil
+                    foto_perfil = usuario[4]  # Suponha que usuario[4] contenha os dados da foto em formato bytea
+                    if foto_perfil:
+                        # Salvar a imagem em um arquivo temporário
+                        try:
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_image:
+                                temp_image_path = temp_image.name
+                                temp_image.write(foto_perfil)
+                        except Exception as e:
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_image:
+                                temp_image_path = temp_image.name
+                                temp_image.write(foto_perfil)
+                        # Redimensionar a imagem
+                        resize_image(temp_image_path)
+                        
+                        # Verificar se o arquivo de imagem existe e é acessível
+                        if os.path.exists(temp_image_path):
+                            window_select_user['-FotoPerfil-'].update(filename=temp_image_path)
+                        else:
+                            window_select_user['-FotoPerfil-'].update(filename='')  # Limpar a imagem se o arquivo não for acessível
+                    else:
+                        window_select_user['-FotoPerfil-'].update(filename='')
+
                 else:
-                    sg.popup('Nenhuma usuario encontrado com o ID fornecido.')
+                    sg.popup('Nenhum usuário encontrado com o ID fornecido.')
             except psycopg2.Error as e:
                 connect.rollback()
                 sg.popup(e)
+            except Exception as e:
+                sg.popup(e)
 
-    window_select_user()
-
+    window_select_user.close()
 
 def create_user():
     layout_create = [
@@ -271,19 +316,29 @@ def create_user():
     window_create_user.close()
 
 def menu_user():
+    # Define o layout do menu com os botões organizados
     layout_crud_user = [
-        [sg.Button('Select'),sg.Button('Insert')],
-        [sg.Button('Update'),sg.Button('Delete')],
-        [sg.Button('Sair')]
+        [sg.Button('Select', size=(10, 2), button_color=('white', '#3498db'), border_width=3),
+         sg.Button('Insert', size=(10, 2), button_color=('white', '#2ecc71'), border_width=3)],
+        [sg.Button('Update', size=(10, 2), button_color=('white', '#f39c12'), border_width=3),
+         sg.Button('Delete', size=(10, 2), button_color=('white', '#e74c3c'), border_width=3)],
+        [sg.Button('Listar Todos', size=(20, 2), button_color=('white', '#9b59b6'), border_width=3)],  # Botão para listar todos os usuários
+        [sg.Button('Sair', size=(10, 2), button_color=('white', '#95a5a6'), border_width=3)]
     ]
 
-    window_menu = sg.Window('Menu',size=(600,200)).Layout(layout_crud_user)
+    # Define o tema e as configurações da janela
+    sg.theme('LightGrey1')
+    sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
+
+    # Cria a janela do menu
+    window_menu = sg.Window('CRUD Usuario', layout=layout_crud_user, size=(400, 300), finalize=True)
 
     while True:
         event, values = window_menu.read()
+
         if event in (None, 'Sair'):
             break
-        if event == 'Select':
+        elif event == 'Select':
             select_user()
         elif event == 'Insert':
             insert_user()
@@ -291,8 +346,26 @@ def menu_user():
             update_user()
         elif event == 'Delete':
             delete_user()
+        elif event == 'Listar Todos':
+            list_all_users()  # Chamada da função para listar todos os usuários
 
     window_menu.close()
+
+# Função para listar todos os usuários
+def list_all_users():
+    try:
+        cursor.execute("SELECT id, nome, dt_nascimento, sexo FROM Usuario")
+        usuarios = cursor.fetchall()
+        if usuarios:
+            result_str = ''
+            for usuario in usuarios:
+                result_str += f'ID: {usuario[0]}, Nome: {usuario[1]}, Data Nascimento: {usuario[2]}, Sexo: {usuario[3]}\n'
+            sg.popup_scrolled(result_str, title='Todos os Usuários', size=(50, 20))
+        else:
+            sg.popup('Nenhum usuário encontrado.')
+    except psycopg2.Error as e:
+        connect.rollback()
+        sg.popup(e)
 
 def select_vendas():
     layout_vendas = [
@@ -479,22 +552,27 @@ def menu_vendas():
 
 def menu():
     layout_menu = [
-        [sg.Button('CRUD Usuario'),sg.Button('CRUD Venda Produto')],
-        [sg.Button('Criar Usuario')],
-        [sg.Button('Sair')]
+        [sg.Button('CRUD Usuario', size=(20, 2), button_color=('white', '#2E86C1'), border_width=5, pad=(20, 10), key='-CRUDUsuario-'),
+         sg.Button('CRUD Venda Produto', size=(20, 2), button_color=('white', '#27AE60'), border_width=5, pad=(20, 10), key='-CRUDVendaProduto-'),
+         sg.Button('Criar Usuario', size=(20, 2), button_color=('white', '#F39C12'), border_width=5, pad=(20, 10), key='-CriarUsuario-')],
+        [sg.Button('Sair', size=(10, 2), button_color=('white', '#C0392B'), border_width=5, pad=(20, 10), key='-Sair-')]
     ]
 
-    window_menu = sg.Window('Menu',size=(600,200)).Layout(layout_menu)
+    sg.theme('LightGrey1')
+    sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
+
+    window_menu = sg.Window('Sistema Atlética', layout=layout_menu, size=(800, 200), finalize=True)
 
     while True:
         event, values = window_menu.read()
-        if event in (None, 'Sair'):
+
+        if event in (sg.WINDOW_CLOSED, '-Sair-'):
             break
-        if event == 'CRUD Usuario':
+        elif event == '-CRUDUsuario-':
             menu_user()
-        elif event == 'CRUD Venda Produto':
+        elif event == '-CRUDVendaProduto-':
             menu_vendas()
-        elif event == 'Criar Usuario':
+        elif event == '-CriarUsuario-':
             create_user()
 
     window_menu.close()
@@ -503,21 +581,28 @@ def menu():
 
 
 layout_login = [
-    [sg.Text('Usuario:'),sg.InputText(key='user')],
-    [sg.Text('Senha:'),sg.InputText('', password_char='*',key='pw')],
-    [sg.Button('Logar')]
+    [sg.Text('Usuario:', size=(10, 1)), sg.InputText(key='user', size=(20, 1))],
+    [sg.Text('Senha:', size=(10, 1)), sg.InputText('', password_char='*', key='pw', size=(20, 1))],
+    [sg.Button('Logar', size=(10, 1), button_color=('white', '#3498db'), border_width=3, pad=(10, 10)),
+     sg.Button('Cancelar', size=(10, 1), button_color=('white', '#FF0000'), border_width=3, pad=(10, 10))]
 ]
 
-window_login = sg.Window('Login',size=(600,200)).Layout(layout_login)
+sg.theme('LightGrey1')
+sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
+
+window_login = sg.Window('Login', layout=layout_login, size=(400, 150), finalize=True)
 
 while True:
     try:
         event, values = window_login.read()
+        if event in (sg.WINDOW_CLOSED, 'Cancelar'):
+            break;
+
         if event == 'Logar':
             user = values['user']
             pw = values['pw']
 
-            connect = psycopg2.connect(database="DB_Atletica1",
+            connect = psycopg2.connect(database="Moca",
                         host= "localhost",
                         user= user,
                         password= pw,
