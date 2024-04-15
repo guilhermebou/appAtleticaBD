@@ -7,6 +7,7 @@ import datetime
 import tempfile
 import os
 from PyPDF2 import PdfReader
+import csv
 
 def select_imagem():
     layout_select_img = [
@@ -588,11 +589,72 @@ def menu_vendas():
 
     window_menu.close()
 
+def select_view1(view):
+    cursor.execute(view)
+    data = cursor.fetchall()
+    layout = [
+    [sg.Table(values=data, headings=['Evento ID', 'Tipo Evento', 'Patrimônio ID', 'Descrição Patrimônio', 'Quantidade Utilizada'])],
+    [sg.Button('Exportar para CSV'),sg.Button('Fechar')]
+]
+
+    window = sg.Window('View de Uso de Patrimônio por Evento', layout)
+
+
+    while True:
+        event, values = window.read()
+        if event == sg.WINDOW_CLOSED or event == 'Fechar':
+            break
+        elif event == 'Exportar para CSV':
+            filename = sg.popup_get_file('Salvar como:', save_as=True, file_types=(("CSV Files", "*.csv"),))
+            if filename:
+                with open(filename, 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(['Evento ID', 'Tipo Evento', 'Patrimônio ID', 'Descrição Patrimônio', 'Quantidade Utilizada'])
+                    writer.writerows(data)
+
+def menu_views():
+    layout_crud_user = [
+        [sg.Button('V1: Patrimônios durante Eventos', size=(25, 2), button_color=('white', '#3498db'), border_width=3,key='v1'),
+         sg.Button('V2: Atletas Equipes Eventos', size=(25, 2), button_color=('white', '#2ecc71'), border_width=3,key='v2')],
+        [sg.Button('V3: Relatorio Vendas', size=(25, 2), button_color=('white', '#f39c12'), border_width=3,key='v3'),
+         sg.Button('V4: Relatorio Atletas', size=(25, 2), button_color=('white', '#95a5a6'), border_width=3,key='v4')],
+        [sg.Button('Sair', size=(10, 2), button_color=('white', '#e74c3c'), border_width=3)]
+    ]
+
+
+    sg.theme('LightGrey1')
+    sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
+
+
+    window_menu = sg.Window('CRUD Usuario', layout=layout_crud_user, size=(550, 300), finalize=True)
+
+    while True:
+        event, values = window_menu.read()
+
+        if event in (None, 'Sair'):
+            break
+        elif event == 'v1':
+            v1 = 'SELECT *  FROM UsoPatrimonioPorEvento'
+            select_view1(v1)
+        elif event == 'v2':
+            v2 = ''
+            #select_view2()
+        elif event == 'v3':
+            v3 = ''
+            #select_view3()
+        elif event == 'v4':
+            v4 = ''
+            #select_view4()
+
+    window_menu.close()
+
+
 def menu():
     layout_menu = [
         [sg.Button('CRUD Usuario', size=(20, 2), button_color=('white', '#2E86C1'), border_width=5, pad=(20, 10), key='-CRUDUsuario-'),
-         sg.Button('CRUD Venda Produto', size=(20, 2), button_color=('white', '#27AE60'), border_width=5, pad=(20, 10), key='-CRUDVendaProduto-'),
-         sg.Button('Criar Usuario', size=(20, 2), button_color=('white', '#F39C12'), border_width=5, pad=(20, 10), key='-CriarUsuario-')],
+         sg.Button('CRUD Venda Produto', size=(20, 2), button_color=('white', '#27AE60'), border_width=5, pad=(20, 10), key='-CRUDVendaProduto-')],
+        [sg.Button('Criar Usuario', size=(20, 2), button_color=('white', '#F39C12'), border_width=5, pad=(20, 10), key='-CriarUsuario-'),
+         sg.Button('Visões', size=(20, 2), button_color=('white', '#9b59b6'), border_width=5, pad=(20, 10), key='-VIEW-')],
         [sg.Button('Sair', size=(10, 2), button_color=('white', '#C0392B'), border_width=5, pad=(20, 10), key='-Sair-')]
     ]
 
@@ -612,6 +674,8 @@ def menu():
             menu_vendas()
         elif event == '-CriarUsuario-':
             create_user()
+        elif event == '-VIEW-':
+            menu_views()
 
     window_menu.close()
     cursor.close()
