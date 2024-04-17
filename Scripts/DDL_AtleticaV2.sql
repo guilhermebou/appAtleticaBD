@@ -10,7 +10,7 @@ CREATE TABLE Usuario (
 -- Tabela: Visitante
 CREATE TABLE Visitante (
     usuario_id INTEGER PRIMARY KEY,
-    eh_estudante BOOLEAN,
+    eh_estudante BOOLEAN DEFAULT FALSE,
     cidade_origem VARCHAR(100),
     FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
 );
@@ -22,7 +22,7 @@ CREATE TABLE Aluno (
     curso VARCHAR(100) NOT NULL,
     matricula VARCHAR(20) NOT NULL,
     comprovante_vinculo BYTEA,
-    data_ingresso DATE,
+    data_ingresso DATE DEFAULT CURRENT_DATE,
     FOREIGN KEY (usuario_id) REFERENCES Usuario(id) ON DELETE CASCADE
 );
 -- Da mesma forma, a restrição acima garante que quando um usuário é excluído da tabela 'Usuario', também seja excluído da tabela 'Aluno'.
@@ -114,7 +114,7 @@ CREATE TABLE UsoPatrimonio (
 CREATE TABLE Produto (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
-    valor_unitario DECIMAL(10, 2) NOT NULL,
+    valor_unitario DECIMAL(10, 2) NOT NULL CHECK (valor_unitario >= 0),
     descricao TEXT NOT NULL,
     quantidade INTEGER NOT NULL,
     tamanho VARCHAR(50)

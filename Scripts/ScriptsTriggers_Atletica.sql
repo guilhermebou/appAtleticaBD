@@ -12,11 +12,11 @@ BEGIN
         SELECT equipe_id FROM Atleta
         WHERE aluno_id = OLD.usuario_id
     );
-    
+
     IF participacao_count > 0 THEN
         RAISE EXCEPTION 'Não é possível excluir o aluno, pois ele está participando de eventos.';
     END IF;
-    
+
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -30,23 +30,25 @@ EXECUTE FUNCTION verificar_participacao_evento();
 --Calcula  o valor total de uma venda assim que ela é realizada
 
 CREATE OR REPLACE FUNCTION calcular_valor_total()
-RETURNS TRIGGER AS $$
-BEGIN
-    
-    SELECT valor_unitario INTO NEW.valor_total
-    FROM Produto
-    WHERE id = NEW.produto_id;
 
-    NEW.valor_total = NEW.quantidade * NEW.valor_total;
+RETURNS TRIGGER AS $$
+DECLARE quantidadeAtual integer;
+BEGIN
+   SELECT valor_unitario INTO NEW.valor_total
+   FROM Produto
+   WHERE id = NEW.produto_id;
+
+   NEW.valor_total = NEW.quantidade * NEW.valor_total;
+
+   SELECT quantidade INTO quantidadeAtual FROM Produto WHERE id = NEW.produto_id;
+
+   UPDATE Produto SET Quantidade = quantidadeAtual - NEW.quantidade WHERE id=NEW.produto_id;
+
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_calcular_valor_total
-BEFORE INSERT ON VendaProduto
-FOR EACH ROW
-EXECUTE FUNCTION calcular_valor_total();
+$$ LANGUAGE plpgsql;
 
 --Trigger 3:
 --É acionada sempre que um novo atleta é adicionado à tabela Atleta. Ela registra automaticamente a participação desse atleta em um evento na tabela ParticipacaoEvento, com base na equipe à qual o atleta pertence e no evento em que ele está participando.

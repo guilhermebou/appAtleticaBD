@@ -9,71 +9,15 @@ import os
 from PyPDF2 import PdfReader
 import csv
 
-def select_imagem():
-    layout_select_img = [
-        [sg.Text('ID da imagem de consulta:'), sg.InputText(key='id')],
-        [sg.Button('SELECT'), sg.Button('Cancelar')]
-    ]
-
-    window_img = sg.Window('Consulta IMG ', layout=layout_select_img)
-
-    while True:
-        event, values = window_img.read()
-        if event in (None, 'Cancelar'):
-            break
-        if event == 'SELECT':
-            id = values['id']
-            try:
-                imagem_data = retrieve_image_from_db(id)
-
-                if imagem_data:
-
-                    temp_image_path = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
-                    with open(temp_image_path, 'wb') as temp_image:
-                        temp_image.write(imagem_data)
-
-                    layout = [
-                        [sg.Image(filename=temp_image_path)],
-                        [sg.Button('Fechar')]
-                    ]
-
-                    window = sg.Window('Imagem do Banco de Dados', layout)
-
-                    while True:
-                        event, values = window.read()
-                        if event == sg.WINDOW_CLOSED or event == 'Fechar':
-                            window.close()
-                            break
-                else:
-                    sg.popup('Nenhuma imagem encontrada com o ID fornecido')
-
-            except psycopg2.Error as e:
-                sg.popup(e)
-
-    window_img.close()
-
-def retrieve_image_from_db(image_id):
-    try:
-        cursor.execute("SELECT imagem FROM imagens WHERE id = %s", (image_id,))
-        image_data = cursor.fetchone()
-        if image_data:
-            return image_data[0]
-        else:
-            print("Nenhuma imagem encontrada com o ID fornecido")
-            return None
-    except psycopg2.Error as e:
-        print("Erro ao recuperar imagem:", e)
-        return None
-
 def insert_user():
     layout_insert = [
-        [sg.Text('Nome:'), sg.InputText(key='nome')],
-        [sg.Text("Data de Nascimento (YYYY-MM-DD):"),sg.InputText(key='dt_nasc'),],
+        [sg.Text('Nome:'), sg.InputText(key='nome',size=(38, 1))],
+        [sg.Text("Data de Nascimento (YYYY-MM-DD):"),sg.InputText(key='dt_nasc',size=(15, 1)),],
         [sg.Text('Selecione o sexo:')],
         [sg.Radio('Masculino','SEX',key='M'), sg.Radio('Feminino','SEX',key='F')],
         [sg.Text('Insira Foto do Usuario:')],
         [sg.InputText(key='FILE'), sg.FileBrowse()],
-        [sg.Button('Inserir'),sg.Button('Cancelar')]
+        [sg.Button('Inserir'),sg.Button('Cancelar',key='Cancelar')]
     ]
 
     window_insert = sg.Window('Inserir Dados').Layout(layout_insert)
@@ -109,7 +53,7 @@ def insert_user():
 
 def delete_user():
     layout_delete = [
-        [sg.Text('ID do Usuario a ser deletado:'), sg.InputText(key='id')],
+        [sg.Text('ID do Usuario a ser deletado:'), sg.InputText(key='id',size=(10,1))],
         [sg.Button('Deletar'), sg.Button('Cancelar')]
     ]
     window_delete = sg.Window('Deletar Dados').Layout(layout_delete)
@@ -132,9 +76,9 @@ def delete_user():
 
 def update_user():
     layout_update = [
-        [sg.Text('ID do Usuario a ser atualizado:'), sg.InputText(key='id')],
-        [sg.Text('Nome:'), sg.InputText(key='nome')],
-        [sg.Text("Data de Nascimento (YYYY-MM-DD):"), sg.InputText(key='dt_nasc')],
+        [sg.Text('ID do Usuario a ser atualizado:'), sg.InputText(key='id',size=(5,1))],
+        [sg.Text('Nome:'), sg.InputText(key='nome',size=(33,1)),],
+        [sg.Text("Data de Nascimento (YYYY-MM-DD):"), sg.InputText(key='dt_nasc',size=(10,1))],
         [sg.Text('Selecione o sexo:')],
         [sg.Radio('Masculino', 'SEX', key='M'), sg.Radio('Feminino', 'SEX', key='F')],
         [sg.Text('Insira Foto do Usuario:')],
@@ -193,7 +137,7 @@ def resize_image(image_path, target_size=(100, 100)):
 def select_user():
 
     layout_user = [
-        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user'), sg.Button('Buscar', bind_return_key=True), sg.Button('Cancelar')],
+        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user',size=(10,1)),sg.Button('Buscar', bind_return_key=True), sg.Button('Cancelar')],
         [sg.Column(layout=[
             [sg.Text('Nome:', size=(17, 1)), sg.Text(size=(20, 1), key='-Nome-')],
             [sg.Text('Data de Nascimento:', size=(17, 1)), sg.Text(size=(20, 1), key='-DataNascimento-')],
@@ -321,8 +265,8 @@ def menu_user():
          sg.Button('Insert', size=(10, 2), button_color=('white', '#2ecc71'), border_width=3)],
         [sg.Button('Update', size=(10, 2), button_color=('white', '#f39c12'), border_width=3),
          sg.Button('Delete', size=(10, 2), button_color=('white', '#e74c3c'), border_width=3)],
-        [sg.Button('Listar Todos', size=(20, 2), button_color=('white', '#9b59b6'), border_width=3)],
-        [sg.Button('Sair', size=(10, 2), button_color=('white', '#95a5a6'), border_width=3)]
+        [sg.Button('Listar Todos', size=(23, 2), button_color=('white', '#9b59b6'), border_width=3)],
+        [sg.Button('Sair', size=(7, 2), button_color=('white', '#95a5a6'), border_width=3)]
     ]
 
 
@@ -330,7 +274,7 @@ def menu_user():
     sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
 
 
-    window_menu = sg.Window('CRUD Usuario', layout=layout_crud_user, size=(400, 300), finalize=True)
+    window_menu = sg.Window('CRUD Usuario', layout=layout_crud_user, size=(300, 300), finalize=True)
 
     while True:
         event, values = window_menu.read()
@@ -387,9 +331,8 @@ def view_pdf_from_bytes(pdf_bytes):
 
 def select_vendas():
     layout_vendas = [
-        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user')],
-        [sg.Text('ID do Produto:'), sg.InputText(key='id_prod')],
-        [sg.Button('Buscar'), sg.Button('Cancelar')]
+        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user',size=(10,1)), sg.Button('Buscar',size=(8,2))],
+        [sg.Text('ID do Produto:'), sg.InputText(key='id_prod',size=(10,1)), sg.Button('Cancelar',size=(8,2))]
     ]
     window_select_vendas = sg.Window('Buscar vendas').Layout(layout_vendas)
 
@@ -409,6 +352,8 @@ def select_vendas():
                     WHERE VP.usuario_id = %s AND VP.produto_id = %s
                 """, (user_id, user_prod))
 
+                #cursor.execute("SELECT * FROM RelatorioVendas where VP.usuario_id =%s and VP.produto_id = %s "),(user_id, user_prod)
+
                 vendas = cursor.fetchall()
                 if vendas:
                     for venda in vendas:
@@ -418,8 +363,11 @@ def select_vendas():
                             [sg.Text(f'Quantidade: {venda[2]}')],
                             [sg.Text(f'Valor Total: {venda[3]}')],
                             [sg.Text(f'Data: {venda[4]}')],
-                            [sg.Button('Visualizar Comprovante', key=venda[5])]
                         ]
+                        if venda[5] is not None:  # Verifica se há comprovante
+                            layout_venda.append([sg.Button('Visualizar Comprovante', key=venda[5])])
+                        else:
+                            layout_venda.append([sg.Text('Nenhum comprovante disponível')])
                         window_venda = sg.Window('Detalhes da Venda').Layout(layout_venda)
 
                         while True:
@@ -427,7 +375,6 @@ def select_vendas():
                             if event in (None, 'Cancelar'):
                                 break
                             elif event == venda[5]:
-
                                 try:
                                     comprovante = venda[5].tobytes()
                                     sg.popup_scrolled(comprovante.decode('utf-8'))
@@ -446,9 +393,9 @@ def select_vendas():
 
 def insert_vendas():
     layout_insert = [
-        [sg.Text('ID do Produto:'), sg.InputText(key='id_prod')],
-        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user')],
-        [sg.Text('Quantidade:'),sg.InputText(key='quant'),sg.Text('Valor:'),sg.InputText(key='valor')],
+        [sg.Text('ID do Produto:'), sg.InputText(key='id_prod',size=(5,0))],
+        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user',size=(5,0))],
+        [sg.Text('Quantidade:'),sg.InputText(key='quant',size=(7,0))],
         [sg.Text('Insira o Comprovante da venda:')],
         [sg.InputText(key='FILE'), sg.FileBrowse()],
         [sg.Button('Inserir'),sg.Button('Cancelar')]
@@ -464,7 +411,7 @@ def insert_vendas():
             id_prod = values['id_prod']
             id_user = values['id_user']
             quant = values['quant']
-            valor = values['valor']
+            valor = ''
             date = datetime.date.today()
             imagem_path = values['FILE']
             if imagem_path == '':
@@ -475,9 +422,10 @@ def insert_vendas():
 
             try:
                 #INSERT INTO VendaProduto (produto_id, usuario_id, quantidade, valor_total, data_venda, comprovante_venda) VALUES (2, 2, 1, 150.00, '2024-04-12', NULL);
-                cursor.execute("INSERT INTO VendaProduto (produto_id, usuario_id, quantidade, valor_total, data_venda, comprovante_venda) VALUES (%s,%s,%s,%s,%s,%s)", (id_prod,id_user,quant,valor,date,imagem))
+                cursor.execute("INSERT INTO VendaProduto (produto_id, usuario_id, quantidade, data_venda, comprovante_venda) VALUES (%s,%s,%s,%s,%s)", (id_prod,id_user,quant,date,imagem))
                 connect.commit()
-                sg.popup('Dados inseridos com sucesso!')
+                sg.popup("Dados inseridos com sucesso!\n\nobs:\n Valor da venda calculado automatico;\nQuantidade de estoque atualizada;\nVenda realizada no dia de hoje!")
+
             except psycopg2.Error as e:
                 connect.rollback()
                 sg.popup('ERRO: ', e)
@@ -485,10 +433,9 @@ def insert_vendas():
 
 def update_vendas():
     layout_update = [
-        [sg.Text('ID da VENDA:'), sg.InputText(key='id_venda')],
-        [sg.Text('ID do Produto:'), sg.InputText(key='id_prod')],
-        [sg.Text('ID do Usuario:'), sg.InputText(key='id_user')],
-        [sg.Text('Quantidade:'),sg.InputText(key='quant'),sg.Text('Valor:'),sg.InputText(key='valor'),sg.Text('Data:'),sg.InputText(key='date')],
+        [sg.Text('ID da Venda:'), sg.InputText(key='id_venda',size=(6,0))],
+        [sg.Text('ID do Produto:'), sg.InputText(key='id_prod',size=(5,0)),sg.Text('ID do Usuario:'),sg.InputText(key='id_user',size=(5,0)),sg.Text('Quantidade:'),sg.InputText(key='quant',size=(5,0))],
+        [sg.Text('Data:'),sg.InputText(key='date',size=(13,1))],
         [sg.Text('Insira o Comprovante da venda:')],
         [sg.InputText(key='FILE'), sg.FileBrowse()],
         [sg.Button('Atualizar'),sg.Button('Cancelar')]
@@ -543,7 +490,7 @@ def update_vendas():
 
 def delete_vendas():
     layout_delete = [
-        [sg.Text('ID da venda a ser deletado:'), sg.InputText(key='id')],
+        [sg.Text('ID da venda a ser deletado:'), sg.InputText(key='id',size=(5,0))],
         [sg.Button('Deletar'), sg.Button('Cancelar')]
     ]
     window_delete = sg.Window('Deletar Dados').Layout(layout_delete)
@@ -564,15 +511,42 @@ def delete_vendas():
 
     window_delete.close()
 
-
-def menu_vendas():
-    layout_crud_vendas = [
-        [sg.Button('Select'),sg.Button('Insert')],
-        [sg.Button('Update'),sg.Button('Delete')],
-        [sg.Button('Sair')]
+def list_all_vendas():
+    cursor.execute("""
+                    SELECT VP.id, U.id, U.nome, P.id, P.nome, VP.quantidade, VP.valor_total, VP.data_venda
+                    FROM VENDAPRODUTO VP
+                    INNER JOIN USUARIO U ON VP.usuario_id = U.id
+                    INNER JOIN PRODUTO P ON P.id = VP.produto_id
+                """)
+    data = cursor.fetchall()
+    layout = [
+    [sg.Table(values=data, headings=['Venda ID', 'ID Usuario', 'Nome Usuario', 'Produto ID', 'Nome Produto', 'Quantidade', 'Valor Total', 'Data Venda'])],
+    [sg.Button('Fechar')]
     ]
 
-    window_menu = sg.Window('Menu',size=(600,200)).Layout(layout_crud_vendas)
+    window = sg.Window('Lista Vendas', layout)
+    while True:
+        event, values = window.read()
+        if event in (sg.WINDOW_CLOSED, 'Fechar'):
+            break
+
+
+def menu_vendas():
+
+    layout_crud_vendas = [
+        [sg.Button('Select', size=(10, 2), button_color=('white', '#3498db'), border_width=3),
+         sg.Button('Insert', size=(10, 2), button_color=('white', '#2ecc71'), border_width=3)],
+        [sg.Button('Update', size=(10, 2), button_color=('white', '#f39c12'), border_width=3),
+         sg.Button('Delete', size=(10, 2), button_color=('white', '#e74c3c'), border_width=3)],
+        [sg.Button('Listar Todos', size=(23, 2), button_color=('white', '#9b59b6'), border_width=3)],
+        [sg.Button('Sair', size=(7, 2), button_color=('white', '#95a5a6'), border_width=3)]
+    ]
+
+    sg.theme('LightGrey1')
+    sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
+
+
+    window_menu = sg.Window('CRUD Vendas', layout=layout_crud_vendas, size=(300, 300), finalize=True)
 
     while True:
         event, values = window_menu.read()
@@ -586,6 +560,8 @@ def menu_vendas():
             update_vendas()
         elif event == 'Delete':
             delete_vendas()
+        elif event == 'Listar Todos':
+            list_all_vendas()
 
     window_menu.close()
 
@@ -595,7 +571,7 @@ def select_view1(view):
     layout = [
     [sg.Table(values=data, headings=['Evento ID', 'Tipo Evento', 'Patrimônio ID', 'Descrição Patrimônio', 'Quantidade Utilizada'])],
     [sg.Button('Exportar para CSV'),sg.Button('Fechar')]
-]
+    ]
 
     window = sg.Window('View de Uso de Patrimônio por Evento', layout)
 
@@ -611,6 +587,79 @@ def select_view1(view):
                     writer = csv.writer(file)
                     writer.writerow(['Evento ID', 'Tipo Evento', 'Patrimônio ID', 'Descrição Patrimônio', 'Quantidade Utilizada'])
                     writer.writerows(data)
+                    sg.popup('Documento Salvo com sucesso')
+
+def select_view2(view):
+    cursor.execute(view)
+    data = cursor.fetchall()
+    layout = [
+    [sg.Table(values=data, headings=['Atleta ID', 'Nome Atleta', 'Equipe ID', 'Equipe', 'Evento ID', 'Tipo Evento'])],
+    [sg.Button('Exportar para CSV'),sg.Button('Fechar')]
+]
+
+    window = sg.Window('View de Uso de Patrimônio por Evento', layout)
+
+
+    while True:
+        event, values = window.read()
+        if event == sg.WINDOW_CLOSED or event == 'Fechar':
+            break
+        elif event == 'Exportar para CSV':
+            filename = sg.popup_get_file('Salvar como:', save_as=True, file_types=(("CSV Files", "*.csv"),))
+            if filename:
+                with open(filename, 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(['Atleta ID', 'Nome Atleta', 'Equipe ID', 'Equipe', 'Evento ID', 'Tipo Evento'])
+                    writer.writerows(data)
+                    sg.popup('Documento Salvo com sucesso')
+
+def select_view3(view):
+    cursor.execute(view)
+    data = cursor.fetchall()
+    layout = [
+    [sg.Table(values=data, headings=['Nome Cliente', 'Produto', 'Quantidade', 'Valor Total', 'Data Venda'])],
+    [sg.Button('Exportar para CSV'),sg.Button('Fechar')]
+]
+
+    window = sg.Window('View de Uso de Patrimônio por Evento', layout)
+
+
+    while True:
+        event, values = window.read()
+        if event == sg.WINDOW_CLOSED or event == 'Fechar':
+            break
+        elif event == 'Exportar para CSV':
+            filename = sg.popup_get_file('Salvar como:', save_as=True, file_types=(("CSV Files", "*.csv"),))
+            if filename:
+                with open(filename, 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(['Nome Cliente', 'Produto', 'Quantidade', 'Valor Total', 'Data Venda'])
+                    writer.writerows(data)
+                    sg.popup('Documento Salvo com sucesso')
+
+def select_view4(view):
+    cursor.execute(view)
+    data = cursor.fetchall()
+    layout = [
+    [sg.Table(values=data, headings=['Atleta ID', 'Nome Atleta', 'Data Nascimento', 'Sexo', 'Equipe','Peso','Altura'])],
+    [sg.Button('Exportar para CSV'),sg.Button('Fechar')]
+    ]
+
+    window = sg.Window('View de Uso de Patrimônio por Evento', layout)
+
+
+    while True:
+        event, values = window.read()
+        if event == sg.WINDOW_CLOSED or event == 'Fechar':
+            break
+        elif event == 'Exportar para CSV':
+            filename = sg.popup_get_file('Salvar como:', save_as=True, file_types=(("CSV Files", "*.csv"),))
+            if filename:
+                with open(filename, 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(['Atleta ID', 'Nome Atleta', 'Data Nascimento', 'Sexo', 'Equipe','Peso','Altura'])
+                    writer.writerows(data)
+                    sg.popup('Documento Salvo com sucesso')
 
 def menu_views():
     layout_crud_user = [
@@ -637,23 +686,23 @@ def menu_views():
             v1 = 'SELECT *  FROM UsoPatrimonioPorEvento'
             select_view1(v1)
         elif event == 'v2':
-            v2 = ''
-            #select_view2()
+            v2 = 'SELECT * FROM AtletasEquipesParticipantes'
+            select_view2(v2)
         elif event == 'v3':
-            v3 = ''
-            #select_view3()
+            v3 = 'SELECT * FROM RelatorioVendas'
+            select_view3(v3)
         elif event == 'v4':
-            v4 = ''
-            #select_view4()
+            v4 = 'SELECT * FROM RelatorioAtletas'
+            select_view4(v4)
 
     window_menu.close()
 
 
 def menu():
     layout_menu = [
-        [sg.Button('CRUD Usuario', size=(20, 2), button_color=('white', '#2E86C1'), border_width=5, pad=(20, 10), key='-CRUDUsuario-'),
-         sg.Button('CRUD Venda Produto', size=(20, 2), button_color=('white', '#27AE60'), border_width=5, pad=(20, 10), key='-CRUDVendaProduto-')],
-        [sg.Button('Criar Usuario', size=(20, 2), button_color=('white', '#F39C12'), border_width=5, pad=(20, 10), key='-CriarUsuario-'),
+        [sg.Button('Menu Usuario', size=(20, 2), button_color=('white', '#2E86C1'), border_width=5, pad=(20, 10), key='-CRUDUsuario-'),
+         sg.Button('Menu Venda Produto', size=(20, 2), button_color=('white', '#27AE60'), border_width=5, pad=(20, 10), key='-CRUDVendaProduto-')],
+        [sg.Button('Criar Conta DB', size=(20, 2), button_color=('white', '#F39C12'), border_width=5, pad=(20, 10), key='-CriarUsuario-'),
          sg.Button('Visões', size=(20, 2), button_color=('white', '#9b59b6'), border_width=5, pad=(20, 10), key='-VIEW-')],
         [sg.Button('Sair', size=(10, 2), button_color=('white', '#C0392B'), border_width=5, pad=(20, 10), key='-Sair-')]
     ]
@@ -661,7 +710,7 @@ def menu():
     sg.theme('LightGrey1')
     sg.set_options(font=('Helvetica', 12), element_padding=(5, 5))
 
-    window_menu = sg.Window('Sistema Atlética', layout=layout_menu, size=(800, 200), finalize=True)
+    window_menu = sg.Window('Sistema Atlética', layout=layout_menu, size=(500, 300), finalize=True)
 
     while True:
         event, values = window_menu.read()
@@ -714,5 +763,5 @@ while True:
             window_login.close()
             menu()
     except psycopg2.Error as e:
-        connect.rollback()
+
         sg.popup("Nome de usuário ou senha errados. Por favor tente outra vez.")
